@@ -185,6 +185,8 @@ def open_print_window():
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
+
+
 def print_selected_file():
     try:
         if not FilePath:
@@ -225,7 +227,7 @@ def close_print_window():
     if print_window:
         print_window.destroy()
 
-def convert_to_grayscale(FilePath, ):
+def convert_to_grayscale(FilePath):
     # Open the PDF
     pdf_document = fitz.open(FilePath)
 
@@ -236,18 +238,17 @@ def convert_to_grayscale(FilePath, ):
         # Get the page
         page = pdf_document.load_page(page_number)
 
-        # Convert the page to a grayscale image
-        image = page.get_pixmap()
-        img = Image.frombytes("RGB", [image.width, image.height], image.samples)
-        img_gray = img.convert("L")
+        # Convert the page to grayscale
+        pix = page.get_pixmap(matrix=fitz.Matrix(1, 1), colorspace="gray")
 
-        # Add the grayscale image as a new page to the new PDF
-        new_page = new_pdf.new_page(width=img_gray.width, height=img_gray.height)
-        new_page.show_pixmap(fitz.Pixmap(fitz.csRGB, img_gray.size[0], img_gray.size[1], img_gray.tobytes()))
+        # Create a new page in the new PDF
+        new_page = new_pdf.new_page(width=pix.width, height=pix.height)
+
+        # Insert the grayscale image of the page into the new page
+        new_page.insert_image(new_page.rect, pixmap=pix)
 
     # Save the new PDF
-    new_pdf.save(output_path)
-    new_pdf.close()
+    new_pdf.save("grayscale_" + FilePath)
 
 def print_selected_file():
     try:
@@ -257,6 +258,8 @@ def print_selected_file():
         # Check if the file is a PDF
         if not FilePath.lower().endswith(".pdf"):
             raise ValueError("Selected file is not a PDF file")
+        if var_option.get() == "non-colored":
+            convert_to_grayscale(FilePath)
 
         if os.path.exists(FilePath):  # Check if the file exists
             if os.name == 'nt':  # Check if running on Windows
@@ -267,13 +270,8 @@ def print_selected_file():
         else:
             print("File not found:", FilePath)
 
-        close_print_window()
-
-        reset_program()  # Reset the program after printing
-
     except ValueError as e:
         messagebox.showerror("Error", str(e))
-
 
 # Set window icon
 root.iconbitmap('C:/Users/Hp/Desktop/PYTHON_PRINTER_PROJ/Logo.ico')
@@ -315,3 +313,4 @@ btn_preview = tk.Button(canvas, text="Preview", font=(10), width=10, height=1, c
 btn_preview.place(relx=0.5, rely=0.8, anchor=tk.CENTER)
 
 root.mainloop()
+
